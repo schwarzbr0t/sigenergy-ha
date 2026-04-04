@@ -45,6 +45,7 @@ TOKEN_EXPIRY_BUFFER = 600  # Refresh 10 minutes before expiry
 CONF_AUTH_METHOD = "auth_method"
 CONF_APP_KEY = "app_key"
 CONF_APP_SECRET = "app_secret"
+CONF_INSTALLATION_ID = "installation_id"
 
 AUTH_METHOD_KEY = "key"
 AUTH_METHOD_PASSWORD = "password"

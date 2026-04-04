@@ -23,6 +23,7 @@ from .const import (
     CONF_APP_KEY,
     CONF_APP_SECRET,
     CONF_AUTH_METHOD,
+    CONF_INSTALLATION_ID,
     CONF_REGION,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
@@ -77,9 +78,13 @@ class SigenergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         )
 
     async def _async_setup(self) -> None:
-        """Set up the coordinator: fetch systems and devices."""
+        """Set up the coordinator: build system list and fetch devices."""
+        installation_id = self.config_entry.data.get(CONF_INSTALLATION_ID)
         try:
-            self.systems = await self.api.get_system_list()
+            if installation_id:
+                self.systems = [{"systemId": installation_id}]
+            else:
+                self.systems = await self.api.get_system_list()
             for system in self.systems:
                 system_id = system["systemId"]
                 self.devices[system_id] = await self.api.get_device_list(system_id)

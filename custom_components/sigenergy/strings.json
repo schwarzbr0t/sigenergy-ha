@@ -25,6 +25,13 @@
           "app_secret": "App Secret"
         }
       },
+      "system": {
+        "title": "Installation ID",
+        "description": "Enter your Installation ID from the Sigenergy Developer Portal ({portal_url}).",
+        "data": {
+          "installation_id": "Installation ID"
+        }
+      },
       "reauth_confirm": {
         "title": "Reauthenticate",
         "description": "Your Sigenergy Cloud credentials have expired. Please reauthenticate."
