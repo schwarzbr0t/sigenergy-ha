@@ -18,7 +18,6 @@ from .const import (
     CONF_APP_KEY,
     CONF_APP_SECRET,
     CONF_AUTH_METHOD,
-    CONF_INSTALLATION_ID,
     CONF_REGION,
     DOMAIN,
     REGION_ANZ,
@@ -122,9 +121,17 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
                 if not valid:
                     errors["base"] = "invalid_auth"
                 else:
-                    self.context["username"] = user_input[CONF_USERNAME]
-                    self.context["password"] = user_input[CONF_PASSWORD]
-                    return await self.async_step_system()
+                    await self.async_set_unique_id(user_input[CONF_USERNAME])
+                    self._abort_if_unique_id_configured()
+                    return self.async_create_entry(
+                        title=f"Sigenergy ({user_input[CONF_USERNAME]})",
+                        data={
+                            CONF_AUTH_METHOD: AUTH_METHOD_PASSWORD,
+                            CONF_USERNAME: user_input[CONF_USERNAME],
+                            CONF_PASSWORD: user_input[CONF_PASSWORD],
+                            CONF_REGION: region,
+                        },
+                    )
             except SigenergyAuthError:
                 errors["base"] = "invalid_auth"
             except SigenergyApiError:
@@ -161,9 +168,17 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
                 if not valid:
                     errors["base"] = "invalid_auth"
                 else:
-                    self.context["app_key"] = user_input[CONF_APP_KEY]
-                    self.context["app_secret"] = user_input[CONF_APP_SECRET]
-                    return await self.async_step_system()
+                    await self.async_set_unique_id(user_input[CONF_APP_KEY])
+                    self._abort_if_unique_id_configured()
+                    return self.async_create_entry(
+                        title=f"Sigenergy ({user_input[CONF_APP_KEY][:8]}...)",
+                        data={
+                            CONF_AUTH_METHOD: AUTH_METHOD_KEY,
+                            CONF_APP_KEY: user_input[CONF_APP_KEY],
+                            CONF_APP_SECRET: user_input[CONF_APP_SECRET],
+                            CONF_REGION: region,
+                        },
+                    )
             except SigenergyAuthError:
                 errors["base"] = "invalid_auth"
             except SigenergyApiError:
@@ -176,52 +191,6 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="key",
             data_schema=STEP_KEY_SCHEMA,
             errors=errors,
-        )
-
-    async def async_step_system(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
-        """Ask for the installation ID."""
-        if user_input is not None:
-            installation_id = user_input[CONF_INSTALLATION_ID].strip()
-            auth_method = self.context.get("auth_method")
-            region = self.context.get("region", REGION_EU)
-
-            if auth_method == AUTH_METHOD_PASSWORD:
-                username = self.context["username"]
-                await self.async_set_unique_id(username)
-                self._abort_if_unique_id_configured()
-                return self.async_create_entry(
-                    title=f"Sigenergy ({username})",
-                    data={
-                        CONF_AUTH_METHOD: AUTH_METHOD_PASSWORD,
-                        CONF_USERNAME: username,
-                        CONF_PASSWORD: self.context["password"],
-                        CONF_REGION: region,
-                        CONF_INSTALLATION_ID: installation_id,
-                    },
-                )
-
-            app_key = self.context["app_key"]
-            await self.async_set_unique_id(app_key)
-            self._abort_if_unique_id_configured()
-            return self.async_create_entry(
-                title=f"Sigenergy ({app_key[:8]}...)",
-                data={
-                    CONF_AUTH_METHOD: AUTH_METHOD_KEY,
-                    CONF_APP_KEY: app_key,
-                    CONF_APP_SECRET: self.context["app_secret"],
-                    CONF_REGION: region,
-                    CONF_INSTALLATION_ID: installation_id,
-                },
-            )
-
-        return self.async_show_form(
-            step_id="system",
-            data_schema=STEP_SYSTEM_SCHEMA,
-            description_placeholders={
-                "portal_url": "developer.sigencloud.com",
-            },
         )
 
     async def async_step_reauth(
