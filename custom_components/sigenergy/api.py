@@ -145,15 +145,30 @@ class SigenergyApi:
         except aiohttp.ClientError as err:
             raise SigenergyApiError(f"Connection error: {err}") from err
 
-    async def _api_post(
-        self, url: str, payload: dict[str, Any] | list[str] | None = None
+    async def _raw_get(
+        self,
+        url: str,
+        params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Make an authenticated API POST request with error handling."""
-        if payload is None:
-            payload = {}
-        full_url = f"{self._base_url}{url}"
-        data = await self._raw_post(full_url, payload)
+        """Make an authenticated GET request."""
+        await self._ensure_token()
+        headers = {"Authorization": f"Bearer {self._access_token}"}
 
+        try:
+            async with self._session.get(
+                url, params=params, headers=headers, timeout=aiohttp.ClientTimeout(total=30)
+            ) as resp:
+                resp.raise_for_status()
+                return await resp.json()
+        except aiohttp.ClientResponseError as err:
+            if err.status == 429:
+                raise SigenergyRateLimitError("Rate limit exceeded") from err
+            raise SigenergyApiError(f"API request failed: {err}") from err
+        except aiohttp.ClientError as err:
+            raise SigenergyApiError(f"Connection error: {err}") from err
+
+    def _check_response(self, data: dict[str, Any], url: str) -> dict[str, Any]:
+        """Check API response for errors."""
         code = data.get("code", -1)
         if code == 1110:
             raise SigenergyRateLimitError("Interface is rate-limited")
@@ -162,37 +177,39 @@ class SigenergyApi:
         if code in (11002, 11003):
             raise SigenergyAuthError(data.get("msg", "Auth error"))
         if code != 0:
-            _LOGGER.warning(
-                "API error %s: %s (url=%s)", code, data.get("msg"), url
-            )
-
+            _LOGGER.warning("API error %s: %s (url=%s)", code, data.get("msg"), url)
         return data
+
+    async def _api_get(
+        self, url: str, params: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
+        """Make an authenticated API GET request with error handling."""
+        full_url = f"{self._base_url}{url}"
+        data = await self._raw_get(full_url, params)
+        return self._check_response(data, url)
+
+    async def _api_post(
+        self, url: str, payload: dict[str, Any] | list[str] | None = None
+    ) -> dict[str, Any]:
+        """Make an authenticated API POST request with error handling."""
+        if payload is None:
+            payload = {}
+        full_url = f"{self._base_url}{url}"
+        data = await self._raw_post(full_url, payload)
+        return self._check_response(data, url)
 
     # ── Inventory ──────────────────────────────────────────────
 
     async def get_system_list(self) -> list[dict[str, Any]]:
-        """Get list of all authorized systems (paged, collects all pages)."""
-        systems: list[dict[str, Any]] = []
-        page = 1
-        page_size = 100
-        while True:
-            data = await self._api_post(
-                SYSTEM_LIST_PAGE_URL,
-                {"pageNum": page, "pageSize": page_size},
-            )
-            page_data = data.get("data") or {}
-            records = page_data.get("list") or page_data.get("records") or []
-            systems.extend(records)
-            total = page_data.get("total", len(records))
-            if len(systems) >= total or not records:
-                break
-            page += 1
-        return systems
+        """Get list of all authorized systems."""
+        data = await self._api_get(SYSTEM_LIST_URL)
+        result = data.get("data", [])
+        return result if isinstance(result, list) else []
 
     async def get_device_list(self, system_id: str) -> list[dict[str, Any]]:
         """Get list of devices for a system."""
         url = DEVICE_LIST_URL.format(system_id=system_id)
-        data = await self._api_post(url, {"systemId": system_id})
+        data = await self._api_get(url, {"systemId": system_id})
         return data.get("data", []) or []
 
     # ── Realtime Data ──────────────────────────────────────────
@@ -200,13 +217,13 @@ class SigenergyApi:
     async def get_realtime_summary(self, system_id: str) -> dict[str, Any]:
         """Get realtime summary data for a system."""
         url = REALTIME_SUMMARY_URL.format(system_id=system_id)
-        data = await self._api_post(url, {"systemId": system_id})
+        data = await self._api_get(url, {"systemId": system_id})
         return data.get("data", {}) or {}
 
     async def get_energy_flow(self, system_id: str) -> dict[str, Any]:
         """Get realtime energy flow data for a system."""
         url = ENERGY_FLOW_URL.format(system_id=system_id)
-        data = await self._api_post(url, {"systemId": system_id})
+        data = await self._api_get(url, {"systemId": system_id})
         return data.get("data", {}) or {}
 
     async def get_device_realtime(
@@ -216,7 +233,7 @@ class SigenergyApi:
         url = DEVICE_REALTIME_URL.format(
             system_id=system_id, serial_number=serial_number
         )
-        data = await self._api_post(
+        data = await self._api_get(
             url, {"systemId": system_id, "serialNumber": serial_number}
         )
         return data.get("data", {}) or {}
@@ -226,7 +243,7 @@ class SigenergyApi:
     async def get_operating_mode(self, system_id: str) -> int | None:
         """Query current operating mode of a system."""
         url = QUERY_MODE_URL.format(system_id=system_id)
-        data = await self._api_post(url, {"systemId": system_id})
+        data = await self._api_get(url, {"systemId": system_id})
         result = data.get("data", {})
         if isinstance(result, dict):
             return result.get("energyStorageOperationMode")
