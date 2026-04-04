@@ -5,6 +5,8 @@ from dataclasses import dataclass
 import logging
 from typing import Any
 
+import datetime
+
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -22,6 +24,7 @@ from homeassistant.const import (
     UnitOfTemperature,
 )
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.util import dt as dt_util
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -53,6 +56,7 @@ SYSTEM_ENERGY_FLOW_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="pv_power",
         translation_key="pv_power",
         name="PV Power",
+        icon="mdi:solar-power",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -62,6 +66,7 @@ SYSTEM_ENERGY_FLOW_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="grid_power",
         translation_key="grid_power",
         name="Grid Power",
+        icon="mdi:transmission-tower",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -71,6 +76,7 @@ SYSTEM_ENERGY_FLOW_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="battery_power",
         translation_key="battery_power",
         name="Battery Power",
+        icon="mdi:battery-charging",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -80,6 +86,7 @@ SYSTEM_ENERGY_FLOW_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="load_power",
         translation_key="load_power",
         name="Load Power",
+        icon="mdi:home-lightning-bolt",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -89,6 +96,7 @@ SYSTEM_ENERGY_FLOW_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="ev_power",
         translation_key="ev_power",
         name="EV Charger Power",
+        icon="mdi:ev-station",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -98,6 +106,7 @@ SYSTEM_ENERGY_FLOW_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="heat_pump_power",
         translation_key="heat_pump_power",
         name="Heat Pump Power",
+        icon="mdi:heat-pump",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -107,6 +116,7 @@ SYSTEM_ENERGY_FLOW_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="battery_soc",
         translation_key="battery_soc",
         name="Battery State of Charge",
+        icon="mdi:battery",
         native_unit_of_measurement=PERCENTAGE,
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
@@ -121,6 +131,7 @@ SYSTEM_SUMMARY_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="daily_generation",
         translation_key="daily_generation",
         name="Daily PV Generation",
+        icon="mdi:solar-power-variant",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -130,6 +141,7 @@ SYSTEM_SUMMARY_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="monthly_generation",
         translation_key="monthly_generation",
         name="Monthly PV Generation",
+        icon="mdi:solar-power-variant",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -139,6 +151,7 @@ SYSTEM_SUMMARY_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="annual_generation",
         translation_key="annual_generation",
         name="Annual PV Generation",
+        icon="mdi:solar-power-variant",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -148,6 +161,7 @@ SYSTEM_SUMMARY_SENSORS: tuple[SigenergySensorDescription, ...] = (
         key="lifetime_generation",
         translation_key="lifetime_generation",
         name="Lifetime PV Generation",
+        icon="mdi:solar-power-variant",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -161,6 +175,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="active_power",
         name="Active Power",
+        icon="mdi:lightning-bolt",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -169,6 +184,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="pv_power",
         name="PV Power",
+        icon="mdi:solar-power",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -177,6 +193,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="bat_power",
         name="Battery Power",
+        icon="mdi:battery-charging",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -185,6 +202,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="bat_soc",
         name="Battery SOC",
+        icon="mdi:battery",
         native_unit_of_measurement=PERCENTAGE,
         device_class=SensorDeviceClass.BATTERY,
         state_class=SensorStateClass.MEASUREMENT,
@@ -193,6 +211,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="grid_frequency",
         name="Grid Frequency",
+        icon="mdi:sine-wave",
         native_unit_of_measurement=UnitOfFrequency.HERTZ,
         device_class=SensorDeviceClass.FREQUENCY,
         state_class=SensorStateClass.MEASUREMENT,
@@ -201,6 +220,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="internal_temp",
         name="Internal Temperature",
+        icon="mdi:thermometer",
         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         device_class=SensorDeviceClass.TEMPERATURE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -209,6 +229,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="phase_a_voltage",
         name="Phase A Voltage",
+        icon="mdi:lightning-bolt",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -217,6 +238,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="phase_b_voltage",
         name="Phase B Voltage",
+        icon="mdi:lightning-bolt",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -225,6 +247,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="phase_c_voltage",
         name="Phase C Voltage",
+        icon="mdi:lightning-bolt",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -233,6 +256,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="phase_a_current",
         name="Phase A Current",
+        icon="mdi:current-ac",
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
@@ -241,6 +265,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="phase_b_current",
         name="Phase B Current",
+        icon="mdi:current-ac",
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
@@ -249,6 +274,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="phase_c_current",
         name="Phase C Current",
+        icon="mdi:current-ac",
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
@@ -257,6 +283,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="power_factor",
         name="Power Factor",
+        icon="mdi:angle-acute",
         state_class=SensorStateClass.MEASUREMENT,
         device_class=SensorDeviceClass.POWER_FACTOR,
         value_fn="powerFactor",
@@ -264,6 +291,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="pv_energy_daily",
         name="PV Energy Daily",
+        icon="mdi:solar-power-variant",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -272,6 +300,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="pv_energy_total",
         name="PV Energy Total",
+        icon="mdi:solar-power-variant",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -280,6 +309,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="es_charging_day",
         name="Battery Charging Today",
+        icon="mdi:battery-arrow-up",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -288,6 +318,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="es_discharging_day",
         name="Battery Discharging Today",
+        icon="mdi:battery-arrow-down",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -296,6 +327,7 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="es_discharging_total",
         name="Battery Discharging Total",
+        icon="mdi:battery-arrow-down",
         native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
         device_class=SensorDeviceClass.ENERGY,
         state_class=SensorStateClass.TOTAL_INCREASING,
@@ -309,6 +341,7 @@ METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="active_power",
         name="Active Power",
+        icon="mdi:lightning-bolt",
         native_unit_of_measurement=UnitOfPower.KILO_WATT,
         device_class=SensorDeviceClass.POWER,
         state_class=SensorStateClass.MEASUREMENT,
@@ -317,6 +350,7 @@ METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="voltage_a",
         name="Phase A Voltage",
+        icon="mdi:lightning-bolt",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -325,6 +359,7 @@ METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="voltage_b",
         name="Phase B Voltage",
+        icon="mdi:lightning-bolt",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -333,6 +368,7 @@ METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="voltage_c",
         name="Phase C Voltage",
+        icon="mdi:lightning-bolt",
         native_unit_of_measurement=UnitOfElectricPotential.VOLT,
         device_class=SensorDeviceClass.VOLTAGE,
         state_class=SensorStateClass.MEASUREMENT,
@@ -341,6 +377,7 @@ METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="current_a",
         name="Phase A Current",
+        icon="mdi:current-ac",
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
@@ -349,6 +386,7 @@ METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="current_b",
         name="Phase B Current",
+        icon="mdi:current-ac",
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
@@ -357,6 +395,7 @@ METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="current_c",
         name="Phase C Current",
+        icon="mdi:current-ac",
         native_unit_of_measurement=UnitOfElectricCurrent.AMPERE,
         device_class=SensorDeviceClass.CURRENT,
         state_class=SensorStateClass.MEASUREMENT,
@@ -365,6 +404,7 @@ METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="grid_frequency",
         name="Grid Frequency",
+        icon="mdi:sine-wave",
         native_unit_of_measurement=UnitOfFrequency.HERTZ,
         device_class=SensorDeviceClass.FREQUENCY,
         state_class=SensorStateClass.MEASUREMENT,
@@ -373,6 +413,7 @@ METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     SigenergySensorDescription(
         key="power_factor",
         name="Power Factor",
+        icon="mdi:angle-acute",
         state_class=SensorStateClass.MEASUREMENT,
         device_class=SensorDeviceClass.POWER_FACTOR,
         value_fn="powerFactor",
@@ -434,6 +475,24 @@ async def async_setup_entry(
         # Operating mode as a sensor
         entities.append(
             SigenergyOperatingModeSensor(
+                coordinator=coordinator,
+                system_id=system_id,
+                system_name=system_name,
+            )
+        )
+
+        # Battery energy (kWh) computed from capacity × SOC
+        entities.append(
+            SigenergyBatteryEnergySensor(
+                coordinator=coordinator,
+                system_id=system_id,
+                system_name=system_name,
+            )
+        )
+
+        # Last sync / next sync diagnostic sensors
+        entities.append(
+            SigenergyLastSyncSensor(
                 coordinator=coordinator,
                 system_id=system_id,
                 system_name=system_name,
@@ -545,6 +604,105 @@ class SigenergyOperatingModeSensor(
         if mode is not None:
             return OPERATING_MODES.get(mode, f"Unknown ({mode})")
         return None
+
+
+class SigenergyBatteryEnergySensor(
+    CoordinatorEntity[SigenergyCoordinator], SensorEntity
+):
+    """Computed sensor: battery stored energy in kWh (capacity × SOC)."""
+
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_device_class = SensorDeviceClass.ENERGY_STORAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:battery-high"
+    _attr_suggested_display_precision = 1
+
+    def __init__(
+        self,
+        coordinator: SigenergyCoordinator,
+        system_id: str,
+        system_name: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._system_id = system_id
+        self._attr_unique_id = f"{system_id}_battery_energy_kwh"
+        self._attr_name = f"{system_name} Battery Stored Energy"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, system_id)},
+            name=system_name,
+            manufacturer="Sigenergy",
+            model="Solar System",
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return stored energy in kWh."""
+        if not self.coordinator.data:
+            return None
+        system_data = self.coordinator.data.get("systems", {}).get(self._system_id, {})
+        soc = system_data.get("energy_flow", {}).get("batterySoc")
+        capacity = system_data.get("info", {}).get("batteryCapacity")
+        if soc is None or capacity is None:
+            return None
+        try:
+            return round(float(capacity) * float(soc) / 100, 2)
+        except (ValueError, TypeError):
+            return None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return total capacity as attribute."""
+        if not self.coordinator.data:
+            return {}
+        system_data = self.coordinator.data.get("systems", {}).get(self._system_id, {})
+        capacity = system_data.get("info", {}).get("batteryCapacity")
+        if capacity is not None:
+            return {"total_capacity_kwh": capacity}
+        return {}
+
+
+class SigenergyLastSyncSensor(
+    CoordinatorEntity[SigenergyCoordinator], SensorEntity
+):
+    """Diagnostic sensor showing last and next sync time."""
+
+    _attr_entity_category = "diagnostic"
+
+    def __init__(
+        self,
+        coordinator: SigenergyCoordinator,
+        system_id: str,
+        system_name: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._system_id = system_id
+        self._attr_unique_id = f"{system_id}_last_sync"
+        self._attr_name = f"{system_name} Last Sync"
+        self._attr_icon = "mdi:clock-sync"
+        self._attr_device_class = SensorDeviceClass.TIMESTAMP
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, system_id)},
+            name=system_name,
+            manufacturer="Sigenergy",
+            model="Solar System",
+        )
+
+    @property
+    def native_value(self) -> datetime.datetime | None:
+        """Return the last successful update time."""
+        if self.coordinator.last_update_success and self.coordinator.data:
+            return self.coordinator.data.get("last_updated")
+        return None
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        """Return next update time."""
+        if self.coordinator.last_update_success:
+            next_update = dt_util.utcnow() + self.coordinator.update_interval
+            return {"next_sync": next_update.isoformat()}
+        return {}
 
 
 class SigenergyDeviceSensor(

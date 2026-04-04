@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from datetime import timedelta
+import datetime
 import logging
 from typing import Any
 
@@ -154,6 +155,7 @@ class SigenergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
                 result["systems"][system_id] = system_data
 
+            result["last_updated"] = datetime.datetime.now(datetime.timezone.utc)
             return result
 
         except SigenergyAuthError as err:
