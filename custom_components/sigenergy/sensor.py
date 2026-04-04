@@ -481,7 +481,14 @@ async def async_setup_entry(
             )
         )
 
-        # Battery energy (kWh) computed from capacity × SOC
+        # Battery capacity and stored energy sensors
+        entities.append(
+            SigenergyBatteryCapacitySensor(
+                coordinator=coordinator,
+                system_id=system_id,
+                system_name=system_name,
+            )
+        )
         entities.append(
             SigenergyBatteryEnergySensor(
                 coordinator=coordinator,
@@ -606,6 +613,48 @@ class SigenergyOperatingModeSensor(
         return None
 
 
+class SigenergyBatteryCapacitySensor(
+    CoordinatorEntity[SigenergyCoordinator], SensorEntity
+):
+    """Sensor showing total rated battery capacity in kWh."""
+
+    _attr_native_unit_of_measurement = UnitOfEnergy.KILO_WATT_HOUR
+    _attr_device_class = SensorDeviceClass.ENERGY_STORAGE
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_icon = "mdi:battery"
+    _attr_entity_category = "diagnostic"
+
+    def __init__(
+        self,
+        coordinator: SigenergyCoordinator,
+        system_id: str,
+        system_name: str,
+    ) -> None:
+        """Initialize the sensor."""
+        super().__init__(coordinator)
+        self._system_id = system_id
+        self._attr_unique_id = f"{system_id}_battery_capacity_kwh"
+        self._attr_name = f"{system_name} Battery Total Capacity"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, system_id)},
+            name=system_name,
+            manufacturer="Sigenergy",
+            model="Solar System",
+        )
+
+    @property
+    def native_value(self) -> float | None:
+        """Return total battery capacity in kWh."""
+        if not self.coordinator.data:
+            return None
+        system_data = self.coordinator.data.get("systems", {}).get(self._system_id, {})
+        capacity = system_data.get("info", {}).get("batteryCapacity")
+        try:
+            return float(capacity) if capacity is not None else None
+        except (ValueError, TypeError):
+            return None
+
+
 class SigenergyBatteryEnergySensor(
     CoordinatorEntity[SigenergyCoordinator], SensorEntity
 ):
@@ -649,18 +698,6 @@ class SigenergyBatteryEnergySensor(
             return round(float(capacity) * float(soc) / 100, 2)
         except (ValueError, TypeError):
             return None
-
-    @property
-    def extra_state_attributes(self) -> dict:
-        """Return total capacity as attribute."""
-        if not self.coordinator.data:
-            return {}
-        system_data = self.coordinator.data.get("systems", {}).get(self._system_id, {})
-        capacity = system_data.get("info", {}).get("batteryCapacity")
-        if capacity is not None:
-            return {"total_capacity_kwh": capacity}
-        return {}
-
 
 class SigenergyLastSyncSensor(
     CoordinatorEntity[SigenergyCoordinator], SensorEntity
