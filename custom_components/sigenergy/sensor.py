@@ -590,7 +590,7 @@ class SigenergyOperatingModeSensor(
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_operating_mode"
-        self._attr_name = f"{system_name} Operating Mode"
+        self._attr_name = "Operating Mode"
         self._attr_icon = "mdi:cog"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, system_id)},
@@ -634,7 +634,7 @@ class SigenergyBatteryCapacitySensor(
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_battery_capacity_kwh"
-        self._attr_name = f"{system_name} Battery Total Capacity"
+        self._attr_name = "Battery Total Capacity"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, system_id)},
             name=system_name,
@@ -676,7 +676,7 @@ class SigenergyBatteryEnergySensor(
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_battery_energy_kwh"
-        self._attr_name = f"{system_name} Battery Stored Energy"
+        self._attr_name = "Battery Stored Energy"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, system_id)},
             name=system_name,
@@ -716,7 +716,7 @@ class SigenergyLastSyncSensor(
         super().__init__(coordinator)
         self._system_id = system_id
         self._attr_unique_id = f"{system_id}_last_sync"
-        self._attr_name = f"{system_name} Last Sync"
+        self._attr_name = "Last Sync"
         self._attr_icon = "mdi:clock-sync"
         self._attr_device_class = SensorDeviceClass.TIMESTAMP
         self._attr_device_info = DeviceInfo(
