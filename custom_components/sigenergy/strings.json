@@ -1,0 +1,56 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sigenergy Cloud",
+        "description": "Choose how to authenticate with the Sigenergy Cloud API.",
+        "data": {
+          "auth_method": "Authentication Method"
+        }
+      },
+      "password": {
+        "title": "Sigen Account Login",
+        "description": "Enter your Sigenergy account credentials.",
+        "data": {
+          "username": "Username (Email)",
+          "password": "Password"
+        }
+      },
+      "key": {
+        "title": "App Key Authentication",
+        "description": "Enter your App Key and App Secret from the Sigenergy Developer Portal.",
+        "data": {
+          "app_key": "App Key",
+          "app_secret": "App Secret"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate",
+        "description": "Your Sigenergy Cloud credentials have expired. Please reauthenticate."
+      }
+    },
+    "error": {
+      "invalid_auth": "Invalid authentication credentials.",
+      "cannot_connect": "Unable to connect to the Sigenergy Cloud API.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This account is already configured."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "pv_power": { "name": "PV Power" },
+      "grid_power": { "name": "Grid Power" },
+      "battery_power": { "name": "Battery Power" },
+      "load_power": { "name": "Load Power" },
+      "ev_power": { "name": "EV Charger Power" },
+      "heat_pump_power": { "name": "Heat Pump Power" },
+      "battery_soc": { "name": "Battery State of Charge" },
+      "daily_generation": { "name": "Daily PV Generation" },
+      "monthly_generation": { "name": "Monthly PV Generation" },
+      "annual_generation": { "name": "Annual PV Generation" },
+      "lifetime_generation": { "name": "Lifetime PV Generation" }
+    }
+  }
+}
