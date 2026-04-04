@@ -171,9 +171,23 @@ class SigenergyApi:
     # ── Inventory ──────────────────────────────────────────────
 
     async def get_system_list(self) -> list[dict[str, Any]]:
-        """Get list of all authorized systems."""
-        data = await self._api_post(SYSTEM_LIST_URL)
-        return data.get("data", []) or []
+        """Get list of all authorized systems (paged, collects all pages)."""
+        systems: list[dict[str, Any]] = []
+        page = 1
+        page_size = 100
+        while True:
+            data = await self._api_post(
+                SYSTEM_LIST_PAGE_URL,
+                {"pageNum": page, "pageSize": page_size},
+            )
+            page_data = data.get("data") or {}
+            records = page_data.get("list") or page_data.get("records") or []
+            systems.extend(records)
+            total = page_data.get("total", len(records))
+            if len(systems) >= total or not records:
+                break
+            page += 1
+        return systems
 
     async def get_device_list(self, system_id: str) -> list[dict[str, Any]]:
         """Get list of devices for a system."""
