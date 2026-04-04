@@ -198,19 +198,36 @@ class SigenergyApi:
         data = await self._raw_post(full_url, payload)
         return self._check_response(data, url)
 
+    @staticmethod
+    def _parse_data(value: Any) -> Any:
+        """Parse a value that may be a JSON-encoded string."""
+        if isinstance(value, str):
+            try:
+                return json.loads(value)
+            except (json.JSONDecodeError, ValueError):
+                return value
+        if isinstance(value, list):
+            return [SigenergyApi._parse_data(item) for item in value]
+        return value
+
     # ── Inventory ──────────────────────────────────────────────
 
     async def get_system_list(self) -> list[dict[str, Any]]:
         """Get list of all authorized systems."""
         data = await self._api_get(SYSTEM_LIST_URL)
-        result = data.get("data", [])
+        result = self._parse_data(data.get("data", []))
         return result if isinstance(result, list) else []
 
     async def get_device_list(self, system_id: str) -> list[dict[str, Any]]:
         """Get list of devices for a system."""
         url = DEVICE_LIST_URL.format(system_id=system_id)
         data = await self._api_get(url, {"systemId": system_id})
-        return data.get("data", []) or []
+        result = self._parse_data(data.get("data", []))
+        # Also parse nested attrMap strings
+        for device in result if isinstance(result, list) else []:
+            if isinstance(device.get("attrMap"), str):
+                device["attrMap"] = self._parse_data(device["attrMap"])
+        return result if isinstance(result, list) else []
 
     # ── Realtime Data ──────────────────────────────────────────
 
@@ -218,13 +235,13 @@ class SigenergyApi:
         """Get realtime summary data for a system."""
         url = REALTIME_SUMMARY_URL.format(system_id=system_id)
         data = await self._api_get(url, {"systemId": system_id})
-        return data.get("data", {}) or {}
+        return self._parse_data(data.get("data", {})) or {}
 
     async def get_energy_flow(self, system_id: str) -> dict[str, Any]:
         """Get realtime energy flow data for a system."""
         url = ENERGY_FLOW_URL.format(system_id=system_id)
         data = await self._api_get(url, {"systemId": system_id})
-        return data.get("data", {}) or {}
+        return self._parse_data(data.get("data", {})) or {}
 
     async def get_device_realtime(
         self, system_id: str, serial_number: str
@@ -236,7 +253,7 @@ class SigenergyApi:
         data = await self._api_get(
             url, {"systemId": system_id, "serialNumber": serial_number}
         )
-        return data.get("data", {}) or {}
+        return self._parse_data(data.get("data", {})) or {}
 
     # ── Instructions ───────────────────────────────────────────
 
@@ -244,7 +261,7 @@ class SigenergyApi:
         """Query current operating mode of a system."""
         url = QUERY_MODE_URL.format(system_id=system_id)
         data = await self._api_get(url, {"systemId": system_id})
-        result = data.get("data", {})
+        result = self._parse_data(data.get("data", {}))
         if isinstance(result, dict):
             return result.get("energyStorageOperationMode")
         return None
