@@ -101,10 +101,12 @@ class SigenergyApi:
 
     def _parse_token_response(self, data: dict[str, Any]) -> None:
         """Parse the token from an auth response."""
-        if data.get("code") != 0:
-            raise SigenergyAuthError(
-                f"Authentication failed: {data.get('msg', 'unknown error')}"
-            )
+        code = data.get("code", -1)
+        if code != 0:
+            msg = data.get("msg", "unknown error")
+            if code in (11002, 11003):
+                raise SigenergyAuthError(f"Authentication failed: {msg}")
+            raise SigenergyApiError(f"Auth endpoint error {code}: {msg}")
 
         token_data = data.get("data")
         if isinstance(token_data, str):
