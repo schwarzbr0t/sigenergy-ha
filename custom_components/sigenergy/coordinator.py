@@ -16,7 +16,7 @@ from homeassistant.helpers.update_coordinator import (
     UpdateFailed,
 )
 
-from .api import SigenergyApi, SigenergyApiError, SigenergyAuthError
+from .api import SigenergyApi, SigenergyApiError, SigenergyAuthError, SigenergyRateLimitError
 from .const import (
     API_BASE_URL,
     AUTH_METHOD_KEY,
@@ -24,6 +24,8 @@ from .const import (
     CONF_APP_KEY,
     CONF_APP_SECRET,
     CONF_AUTH_METHOD,
+    CONF_CACHED_DEVICES,
+    CONF_CACHED_SYSTEMS,
     CONF_INSTALLATION_ID,
     CONF_REGION,
     DEFAULT_SCAN_INTERVAL,
@@ -81,18 +83,68 @@ class SigenergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _async_setup(self) -> None:
         """Set up the coordinator: build system list and fetch devices."""
         installation_id = self.config_entry.data.get(CONF_INSTALLATION_ID)
+        cached_systems = self.config_entry.data.get(CONF_CACHED_SYSTEMS)
+        cached_devices = self.config_entry.data.get(CONF_CACHED_DEVICES, {})
+
         try:
             if installation_id:
                 self.systems = [{"systemId": installation_id}]
+            elif cached_systems:
+                self.systems = cached_systems
+                _LOGGER.debug(
+                    "Using cached system list (%d system(s)) — skipping API call",
+                    len(self.systems),
+                )
             else:
                 self.systems = await self.api.get_system_list()
+
+            new_cached_devices: dict[str, Any] = dict(cached_devices)
+            data_changed = not cached_systems
+
             for system in self.systems:
                 system_id = system["systemId"]
-                self.devices[system_id] = await self.api.get_device_list(system_id)
+                if system_id in cached_devices:
+                    self.devices[system_id] = cached_devices[system_id]
+                    _LOGGER.debug(
+                        "Using cached device list for system %s", system_id
+                    )
+                else:
+                    self.devices[system_id] = await self.api.get_device_list(system_id)
+                    new_cached_devices[system_id] = self.devices[system_id]
+                    data_changed = True
+
+            if data_changed:
+                self.hass.config_entries.async_update_entry(
+                    self.config_entry,
+                    data={
+                        **self.config_entry.data,
+                        CONF_CACHED_SYSTEMS: self.systems,
+                        CONF_CACHED_DEVICES: new_cached_devices,
+                    },
+                )
+
+        except SigenergyRateLimitError as err:
+            if cached_systems:
+                # Rate limited but we have a cache — use it and continue
+                _LOGGER.warning(
+                    "Sigenergy API rate limit hit during setup, using cached data: %s", err
+                )
+                self.systems = cached_systems
+                self.devices = {k: v for k, v in cached_devices.items()}
+            else:
+                raise UpdateFailed(
+                    "Sigenergy API rate limit reached (max 1 request/5 min for system list). "
+                    "Home Assistant will retry automatically — usually within a few minutes."
+                ) from err
         except SigenergyAuthError as err:
-            raise ConfigEntryAuthFailed("Authentication failed") from err
+            raise ConfigEntryAuthFailed(
+                "Authentication failed. Please check your credentials under "
+                "Settings → Devices & Services → Sigenergy Cloud → Reconfigure."
+            ) from err
         except SigenergyApiError as err:
-            raise UpdateFailed(f"Error fetching system list: {err}") from err
+            raise UpdateFailed(
+                f"Could not connect to the Sigenergy API: {err}"
+            ) from err
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Fetch data from the Sigenergy API."""
@@ -159,6 +211,14 @@ class SigenergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return result
 
         except SigenergyAuthError as err:
-            raise ConfigEntryAuthFailed("Authentication failed") from err
+            raise ConfigEntryAuthFailed(
+                "Authentication failed. Please check your credentials under "
+                "Settings → Devices & Services → Sigenergy Cloud → Reconfigure."
+            ) from err
+        except SigenergyRateLimitError as err:
+            raise UpdateFailed(
+                "Sigenergy API rate limit reached. Data will refresh automatically "
+                "in the next polling cycle (every 5 minutes)."
+            ) from err
         except SigenergyApiError as err:
-            raise UpdateFailed(f"Error communicating with API: {err}") from err
+            raise UpdateFailed(f"Could not connect to the Sigenergy API: {err}") from err

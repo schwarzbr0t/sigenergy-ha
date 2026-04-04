@@ -46,6 +46,8 @@ CONF_AUTH_METHOD = "auth_method"
 CONF_APP_KEY = "app_key"
 CONF_APP_SECRET = "app_secret"
 CONF_INSTALLATION_ID = "installation_id"
+CONF_CACHED_SYSTEMS = "cached_systems"
+CONF_CACHED_DEVICES = "cached_devices"
 
 AUTH_METHOD_KEY = "key"
 AUTH_METHOD_PASSWORD = "password"
