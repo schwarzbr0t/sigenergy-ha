@@ -3,7 +3,28 @@
 DOMAIN = "sigenergy"
 
 # API
-API_BASE_URL = "https://openapi-eu.sigencloud.com"
+API_BASE_URL = "https://openapi-eu.sigencloud.com"  # default / backward compat
+
+CONF_REGION = "region"
+REGION_EU = "eu"
+REGION_AP = "ap"
+REGION_MEA = "mea"
+REGION_CN = "cn"
+REGION_ANZ = "anz"
+REGION_LA = "la"
+REGION_NA = "na"
+REGION_JP = "jp"
+
+REGION_URLS = {
+    REGION_EU: "https://openapi-eu.sigencloud.com",
+    REGION_AP: "https://openapi-ap.sigencloud.com",
+    REGION_MEA: "https://openapi-mea.sigencloud.com",
+    REGION_CN: "https://openapi-cn.sigencloud.com",
+    REGION_ANZ: "https://openapi-anz.sigencloud.com",
+    REGION_LA: "https://openapi-la.sigencloud.com",
+    REGION_NA: "https://openapi-na.sigencloud.com",
+    REGION_JP: "https://openapi-jp.sigencloud.com",
+}
 AUTH_URL_PASSWORD = "/openapi/auth/login/password"
 AUTH_URL_KEY = "/openapi/auth/login/key"
 SYSTEM_LIST_URL = "/openapi/system"

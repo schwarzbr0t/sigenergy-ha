@@ -3,8 +3,9 @@
     "step": {
       "user": {
         "title": "Sigenergy Cloud",
-        "description": "Choose how to authenticate with the Sigenergy Cloud API.",
+        "description": "Choose your region and authentication method.",
         "data": {
+          "region": "Region",
           "auth_method": "Authentication Method"
         }
       },

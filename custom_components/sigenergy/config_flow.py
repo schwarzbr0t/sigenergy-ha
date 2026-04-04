@@ -18,13 +18,35 @@ from .const import (
     CONF_APP_KEY,
     CONF_APP_SECRET,
     CONF_AUTH_METHOD,
+    CONF_REGION,
     DOMAIN,
+    REGION_ANZ,
+    REGION_AP,
+    REGION_CN,
+    REGION_EU,
+    REGION_JP,
+    REGION_LA,
+    REGION_MEA,
+    REGION_NA,
+    REGION_URLS,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 STEP_AUTH_METHOD_SCHEMA = vol.Schema(
     {
+        vol.Required(CONF_REGION, default=REGION_EU): vol.In(
+            {
+                REGION_EU: "Europe",
+                REGION_AP: "Asia Pacific & Middle Asia",
+                REGION_MEA: "Middle East & Africa",
+                REGION_CN: "Chinese Mainland",
+                REGION_ANZ: "Australia & New Zealand",
+                REGION_LA: "Latin America",
+                REGION_NA: "North America",
+                REGION_JP: "Japan",
+            }
+        ),
         vol.Required(CONF_AUTH_METHOD, default=AUTH_METHOD_PASSWORD): vol.In(
             {
                 AUTH_METHOD_PASSWORD: "Sigen Account (Username & Password)",
@@ -61,6 +83,7 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             auth_method = user_input[CONF_AUTH_METHOD]
             self.context["auth_method"] = auth_method
+            self.context["region"] = user_input[CONF_REGION]
             if auth_method == AUTH_METHOD_PASSWORD:
                 return await self.async_step_password()
             return await self.async_step_key()
@@ -77,12 +100,15 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            region = self.context.get("region", REGION_EU)
+            base_url = REGION_URLS[region]
             session = async_get_clientsession(self.hass)
             api = SigenergyApi(
                 session=session,
                 auth_method=AUTH_METHOD_PASSWORD,
                 username=user_input[CONF_USERNAME],
                 password=user_input[CONF_PASSWORD],
+                base_url=base_url,
             )
             try:
                 valid = await api.validate_credentials()
@@ -99,6 +125,7 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
                             CONF_AUTH_METHOD: AUTH_METHOD_PASSWORD,
                             CONF_USERNAME: user_input[CONF_USERNAME],
                             CONF_PASSWORD: user_input[CONF_PASSWORD],
+                            CONF_REGION: region,
                         },
                     )
             except SigenergyAuthError:
@@ -122,12 +149,15 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
+            region = self.context.get("region", REGION_EU)
+            base_url = REGION_URLS[region]
             session = async_get_clientsession(self.hass)
             api = SigenergyApi(
                 session=session,
                 auth_method=AUTH_METHOD_KEY,
                 app_key=user_input[CONF_APP_KEY],
                 app_secret=user_input[CONF_APP_SECRET],
+                base_url=base_url,
             )
             try:
                 valid = await api.validate_credentials()
@@ -144,6 +174,7 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
                             CONF_AUTH_METHOD: AUTH_METHOD_KEY,
                             CONF_APP_KEY: user_input[CONF_APP_KEY],
                             CONF_APP_SECRET: user_input[CONF_APP_SECRET],
+                            CONF_REGION: region,
                         },
                     )
             except SigenergyAuthError:

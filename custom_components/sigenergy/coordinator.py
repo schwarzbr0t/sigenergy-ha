@@ -17,13 +17,16 @@ from homeassistant.helpers.update_coordinator import (
 
 from .api import SigenergyApi, SigenergyApiError, SigenergyAuthError
 from .const import (
+    API_BASE_URL,
     AUTH_METHOD_KEY,
     AUTH_METHOD_PASSWORD,
     CONF_APP_KEY,
     CONF_APP_SECRET,
     CONF_AUTH_METHOD,
+    CONF_REGION,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    REGION_URLS,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -54,18 +57,23 @@ class SigenergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         session = async_get_clientsession(hass)
         auth_method = entry.data.get(CONF_AUTH_METHOD, AUTH_METHOD_PASSWORD)
 
+        region = entry.data.get(CONF_REGION)
+        base_url = REGION_URLS.get(region, API_BASE_URL)
+
         if auth_method == AUTH_METHOD_PASSWORD:
             return SigenergyApi(
                 session=session,
                 auth_method=AUTH_METHOD_PASSWORD,
                 username=entry.data[CONF_USERNAME],
                 password=entry.data[CONF_PASSWORD],
+                base_url=base_url,
             )
         return SigenergyApi(
             session=session,
             auth_method=AUTH_METHOD_KEY,
             app_key=entry.data[CONF_APP_KEY],
             app_secret=entry.data[CONF_APP_SECRET],
+            base_url=base_url,
         )
 
     async def _async_setup(self) -> None:
