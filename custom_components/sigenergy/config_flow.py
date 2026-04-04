@@ -70,12 +70,6 @@ STEP_KEY_SCHEMA = vol.Schema(
     }
 )
 
-STEP_SYSTEM_SCHEMA = vol.Schema(
-    {
-        vol.Required(CONF_INSTALLATION_ID): str,
-    }
-)
-
 
 class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Sigenergy Cloud."""
