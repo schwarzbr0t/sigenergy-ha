@@ -290,12 +290,10 @@ class SigenergyApi:
 
     # ── Validate credentials ───────────────────────────────────
 
-    async def validate_credentials(self) -> bool:
-        """Test that credentials are valid by authenticating."""
-        try:
-            await self.authenticate()
-            return True
-        except SigenergyAuthError:
-            return False
-        except SigenergyApiError:
-            return False
+    async def validate_credentials(self) -> None:
+        """Test that credentials are valid by authenticating.
+
+        Raises SigenergyAuthError / SigenergyApiError so callers can
+        surface the server-provided message.
+        """
+        await self.authenticate()

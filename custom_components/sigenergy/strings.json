@@ -38,9 +38,9 @@
       }
     },
     "error": {
-      "invalid_auth": "Invalid authentication credentials.",
-      "cannot_connect": "Unable to connect to the Sigenergy Cloud API.",
-      "unknown": "An unexpected error occurred."
+      "invalid_auth": "Invalid authentication credentials. Server said: {error_detail}. Common causes: wrong region for this account, typo in email/password, or password login not enabled for this account.",
+      "cannot_connect": "Unable to connect to the Sigenergy Cloud API: {error_detail}",
+      "unknown": "An unexpected error occurred: {error_detail}"
     },
     "abort": {
       "already_configured": "This account is already configured."

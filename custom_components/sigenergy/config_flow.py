@@ -59,6 +59,7 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
     ) -> ConfigFlowResult:
         """Handle the initial step."""
         errors: dict[str, str] = {}
+        placeholders: dict[str, str] = {"error_detail": ""}
 
         if user_input is not None:
             region = user_input[CONF_REGION]
@@ -72,33 +73,34 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
                 base_url=base_url,
             )
             try:
-                valid = await api.validate_credentials()
-                if not valid:
-                    errors["base"] = "invalid_auth"
-                else:
-                    await self.async_set_unique_id(user_input[CONF_USERNAME])
-                    self._abort_if_unique_id_configured()
-                    return self.async_create_entry(
-                        title=f"Sigenergy ({user_input[CONF_USERNAME]})",
-                        data={
-                            CONF_AUTH_METHOD: AUTH_METHOD_PASSWORD,
-                            CONF_USERNAME: user_input[CONF_USERNAME],
-                            CONF_PASSWORD: user_input[CONF_PASSWORD],
-                            CONF_REGION: region,
-                        },
-                    )
-            except SigenergyAuthError:
+                await api.validate_credentials()
+                await self.async_set_unique_id(user_input[CONF_USERNAME])
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(
+                    title=f"Sigenergy ({user_input[CONF_USERNAME]})",
+                    data={
+                        CONF_AUTH_METHOD: AUTH_METHOD_PASSWORD,
+                        CONF_USERNAME: user_input[CONF_USERNAME],
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
+                        CONF_REGION: region,
+                    },
+                )
+            except SigenergyAuthError as err:
                 errors["base"] = "invalid_auth"
-            except SigenergyApiError:
+                placeholders["error_detail"] = str(err)
+            except SigenergyApiError as err:
                 errors["base"] = "cannot_connect"
-            except Exception:
+                placeholders["error_detail"] = str(err)
+            except Exception as err:  # noqa: BLE001
                 _LOGGER.exception("Unexpected exception during auth")
                 errors["base"] = "unknown"
+                placeholders["error_detail"] = str(err)
 
         return self.async_show_form(
             step_id="user",
             data_schema=STEP_USER_SCHEMA,
             errors=errors,
+            description_placeholders=placeholders,
         )
 
     async def async_step_reauth(

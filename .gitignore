@@ -1,0 +1,43 @@
+# ── Claude Code / OMC workspace state ───────────────────────────────
+.claude/
+.claude/settings.local.json
+.omc/
+.omc/project-memory.json
+.omc/sessions/
+.omc/state/
+.omc/notepad.md
+.omc/plans/
+.omc/research/
+.omc/logs/
+
+# ── macOS ───────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── Python ──────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# ── IDE / Editors ───────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ── Local env / secrets ─────────────────────────────────────────────
+.env
+.env.local
+*.local
