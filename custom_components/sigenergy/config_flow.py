@@ -79,17 +79,6 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
             )
             try:
                 await api.validate_credentials()
-                await self.async_set_unique_id(user_input[CONF_USERNAME])
-                self._abort_if_unique_id_configured()
-                return self.async_create_entry(
-                    title=f"Sigenergy ({user_input[CONF_USERNAME]})",
-                    data={
-                        CONF_AUTH_METHOD: AUTH_METHOD_PASSWORD,
-                        CONF_USERNAME: user_input[CONF_USERNAME],
-                        CONF_PASSWORD: user_input[CONF_PASSWORD],
-                        CONF_REGION: region,
-                    },
-                )
             except SigenergyAuthError as err:
                 if err.code == 11002:
                     errors["base"] = "user_not_found"
@@ -108,6 +97,18 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception during auth")
                 errors["base"] = "unknown"
                 placeholders["error_detail"] = str(err)
+            else:
+                await self.async_set_unique_id(user_input[CONF_USERNAME])
+                self._abort_if_unique_id_configured()
+                return self.async_create_entry(
+                    title=f"Sigenergy ({user_input[CONF_USERNAME]})",
+                    data={
+                        CONF_AUTH_METHOD: AUTH_METHOD_PASSWORD,
+                        CONF_USERNAME: user_input[CONF_USERNAME],
+                        CONF_PASSWORD: user_input[CONF_PASSWORD],
+                        CONF_REGION: region,
+                    },
+                )
 
         return self.async_show_form(
             step_id="user",
