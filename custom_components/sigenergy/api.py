@@ -32,6 +32,10 @@ _LOGGER = logging.getLogger(__name__)
 class SigenergyApiError(Exception):
     """Base exception for Sigenergy API errors."""
 
+    def __init__(self, message: str = "", *, code: int | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+
 
 class SigenergyAuthError(SigenergyApiError):
     """Authentication error."""
@@ -105,8 +109,8 @@ class SigenergyApi:
         if code != 0:
             msg = data.get("msg", "unknown error")
             if code in (11002, 11003):
-                raise SigenergyAuthError(f"Authentication failed: {msg}")
-            raise SigenergyApiError(f"Auth endpoint error {code}: {msg}")
+                raise SigenergyAuthError(msg, code=code)
+            raise SigenergyApiError(f"{msg} (code {code})", code=code)
 
         token_data = data.get("data")
         if isinstance(token_data, str):

@@ -38,9 +38,12 @@
       }
     },
     "error": {
-      "invalid_auth": "Invalid authentication credentials. Server said: {error_detail}. Common causes: wrong region for this account, typo in email/password, or password login not enabled for this account.",
-      "cannot_connect": "Unable to connect to the Sigenergy Cloud API: {error_detail}",
-      "unknown": "An unexpected error occurred: {error_detail}"
+      "invalid_auth": "Login failed. Please check your email, password and region — and make sure password login is enabled for this account. (Details: {error_detail})",
+      "user_not_found": "This email is not registered in the selected region. Please check your email address or switch to the region where your Sigenergy account was created.",
+      "wrong_password": "The password is incorrect. Please try again — note that passwords are case-sensitive.",
+      "rate_limited": "Too many login attempts. Please wait a few minutes and try again.",
+      "cannot_connect": "Could not reach the Sigenergy Cloud. Please check your internet connection and try again. (Details: {error_detail})",
+      "unknown": "Something went wrong during login. Please try again. (Details: {error_detail})"
     },
     "abort": {
       "already_configured": "This account is already configured."

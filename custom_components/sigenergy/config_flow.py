@@ -10,7 +10,12 @@ from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
 from homeassistant.const import CONF_PASSWORD, CONF_USERNAME
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
-from .api import SigenergyApi, SigenergyAuthError, SigenergyApiError
+from .api import (
+    SigenergyApi,
+    SigenergyApiError,
+    SigenergyAuthError,
+    SigenergyRateLimitError,
+)
 from .const import (
     AUTH_METHOD_PASSWORD,
     CONF_AUTH_METHOD,
@@ -86,7 +91,15 @@ class SigenergyConfigFlow(ConfigFlow, domain=DOMAIN):
                     },
                 )
             except SigenergyAuthError as err:
-                errors["base"] = "invalid_auth"
+                if err.code == 11002:
+                    errors["base"] = "user_not_found"
+                elif err.code == 11003:
+                    errors["base"] = "wrong_password"
+                else:
+                    errors["base"] = "invalid_auth"
+                placeholders["error_detail"] = str(err)
+            except SigenergyRateLimitError as err:
+                errors["base"] = "rate_limited"
                 placeholders["error_detail"] = str(err)
             except SigenergyApiError as err:
                 errors["base"] = "cannot_connect"
