@@ -89,10 +89,10 @@ Select the region matching your Sigenergy account during setup:
 |--------|-------------|
 | Europe | EU |
 | Asia Pacific & Middle Asia | AP |
-| Middle East & Africa | MEA |
+| Middle East & Africa | MEA — ⚠️ correct API endpoint unknown, may not connect |
 | Chinese Mainland | CN |
 | Australia & New Zealand | ANZ |
-| Latin America | LA |
+| Latin America | LA — ⚠️ correct API endpoint unknown, may not connect |
 | North America | NA |
 | Japan | JP |
 

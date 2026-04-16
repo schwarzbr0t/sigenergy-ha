@@ -17,12 +17,12 @@ REGION_JP = "jp"
 
 REGION_URLS = {
     REGION_EU: "https://openapi-eu.sigencloud.com",
-    REGION_AP: "https://openapi-ap.sigencloud.com",
+    REGION_AP: "https://openapi-apac.sigencloud.com",
     REGION_MEA: "https://openapi-mea.sigencloud.com",
     REGION_CN: "https://openapi-cn.sigencloud.com",
-    REGION_ANZ: "https://openapi-anz.sigencloud.com",
+    REGION_ANZ: "https://openapi-aus.sigencloud.com",
     REGION_LA: "https://openapi-la.sigencloud.com",
-    REGION_NA: "https://openapi-na.sigencloud.com",
+    REGION_NA: "https://openapi-us.sigencloud.com",
     REGION_JP: "https://openapi-jp.sigencloud.com",
 }
 AUTH_URL_PASSWORD = "/openapi/auth/login/password"
