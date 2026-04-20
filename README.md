@@ -3,6 +3,7 @@
 [![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://hacs.xyz)
 [![GitHub Release](https://img.shields.io/github/v/release/schwarzbr0t/sigenergy-ha)](https://github.com/schwarzbr0t/sigenergy-ha/releases)
 [![HACS Action](https://github.com/schwarzbr0t/sigenergy-ha/actions/workflows/validate.yaml/badge.svg)](https://github.com/schwarzbr0t/sigenergy-ha/actions/workflows/validate.yaml)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-kevinschwarz-ffdd00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/kevinschwarz)
 
 Home Assistant custom integration for **Sigenergy** solar inverters, batteries, and energy storage systems via the Sigenergy Cloud OpenAPI.
 
@@ -89,10 +90,10 @@ Select the region matching your Sigenergy account during setup:
 |--------|-------------|
 | Europe | EU |
 | Asia Pacific & Middle Asia | AP |
-| Middle East & Africa | MEA — ⚠️ correct API endpoint unknown, may not connect |
+| Middle East & Africa | MEA (routes via EU endpoint) |
 | Chinese Mainland | CN |
 | Australia & New Zealand | ANZ |
-| Latin America | LA — ⚠️ correct API endpoint unknown, may not connect |
+| Latin America | LA (routes via US endpoint) |
 | North America | NA |
 | Japan | JP |
 
@@ -107,6 +108,12 @@ The Sigenergy Cloud API allows **1 request per endpoint per 5 minutes**. The int
 | "Rate limit reached" | API called too frequently | Wait a few minutes — HA retries automatically |
 | "Authentication failed" | Wrong credentials or expired token | Reconfigure via Settings → Devices & Services |
 | No devices / entities | System not yet discovered | Check HA logs; delete and re-add the integration |
+
+## Support
+
+If this integration is useful to you, consider supporting development:
+
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-kevinschwarz-ffdd00?logo=buymeacoffee&logoColor=black)](https://buymeacoffee.com/kevinschwarz)
 
 ## License
 
