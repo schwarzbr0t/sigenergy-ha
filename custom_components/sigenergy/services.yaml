@@ -1,0 +1,17 @@
+refresh_systems:
+  name: Refresh systems
+  description: >
+    Clear the cached system and device list and re-query the Sigenergy Cloud API.
+    Use this after adding a new system to your Sigenergy account so Home Assistant
+    can discover it without removing and re-adding the integration.
+  fields:
+    entry_id:
+      name: Config entry ID
+      description: >
+        Optional. Limit the refresh to a single Sigenergy Cloud config entry
+        (by entry_id). If omitted, all Sigenergy Cloud entries are refreshed.
+      required: false
+      example: "01J5A1B2C3D4E5F6G7H8J9K0L1"
+      selector:
+        config_entry:
+          integration: sigenergy

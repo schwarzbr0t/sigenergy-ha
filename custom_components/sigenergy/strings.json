@@ -49,6 +49,18 @@
       "already_configured": "This account is already configured."
     }
   },
+  "services": {
+    "refresh_systems": {
+      "name": "Refresh systems",
+      "description": "Clear the cached system/device list and re-query the Sigenergy Cloud API so newly-added systems on your account are discovered.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "Optional — limit the refresh to a single Sigenergy Cloud config entry. If omitted, all Sigenergy Cloud entries are refreshed."
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "pv_power": { "name": "PV Power" },

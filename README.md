@@ -108,6 +108,24 @@ The Sigenergy Cloud API allows **1 request per endpoint per 5 minutes**. The int
 | "Rate limit reached" | API called too frequently | Wait a few minutes — HA retries automatically |
 | "Authentication failed" | Wrong credentials or expired token | Reconfigure via Settings → Devices & Services |
 | No devices / entities | System not yet discovered | Check HA logs; delete and re-add the integration |
+| New system not showing up | System list is cached after first fetch | Call the `sigenergy.refresh_systems` service (see below) |
+
+### Discovering a newly-added system
+
+If you added a system to your Sigenergy account **after** setting up the integration,
+it will not appear automatically — the system list is cached to avoid hitting the
+1-request-per-5-minute rate limit on every HA restart.
+
+To force re-discovery, call the **`sigenergy.refresh_systems`** service from
+**Developer Tools → Services**:
+
+```yaml
+service: sigenergy.refresh_systems
+# entry_id is optional — omit to refresh all Sigenergy entries
+```
+
+The service clears the cached system/device list and reloads the integration,
+which triggers a fresh API call for your full system inventory.
 
 ## Support
 
