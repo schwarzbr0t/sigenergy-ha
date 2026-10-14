@@ -59,6 +59,24 @@
           "description": "Optional — limit the refresh to a single Sigenergy Cloud config entry. If omitted, all Sigenergy Cloud entries are refreshed."
         }
       }
+    },
+    "backfill_statistics": {
+      "name": "Backfill statistics",
+      "description": "Import daily energy history from the Sigenergy Cloud into the long-term statistics of the Total energy sensors and Lifetime PV Generation. Runs in the background, about one month every 10 minutes because of the API rate limit.",
+      "fields": {
+        "system_id": {
+          "name": "System ID",
+          "description": "Optional — the Sigenergy system (installation) ID, for example NDXZZ1731665796. If omitted, all systems are backfilled."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "First day to import."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "Last day to import. Days on which a sensor already has statistics, and today, are skipped."
+        }
+      }
     }
   },
   "entity": {

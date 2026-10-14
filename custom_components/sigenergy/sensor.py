@@ -673,7 +673,10 @@ class SigenergyHistorySensor(SigenergySystemSensor):
             self._system_id, {}
         )
         period = system_data.get("history", {}).get(self.entity_description.level, {})
-        value = period.get(self.entity_description.value_fn)
+        # The period totals are named with a "Kwh" suffix (powerFromGridKwh),
+        # the per-interval items without it. Accept both.
+        field = self.entity_description.value_fn
+        value = period.get(f"{field}Kwh", period.get(field))
         try:
             return float(value) if value is not None else None
         except (ValueError, TypeError):

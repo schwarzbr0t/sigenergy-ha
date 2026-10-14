@@ -3,7 +3,7 @@
   "name": "Sigenergy Cloud",
   "codeowners": ["@schwarzbr0t"],
   "config_flow": true,
-  "dependencies": [],
+  "dependencies": ["recorder"],
   "documentation": "https://github.com/schwarzbr0t/sigenergy-ha",
   "iot_class": "cloud_polling",
   "issue_tracker": "https://github.com/schwarzbr0t/sigenergy-ha/issues",

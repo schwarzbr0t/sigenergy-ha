@@ -15,3 +15,39 @@ refresh_systems:
       selector:
         config_entry:
           integration: sigenergy
+
+backfill_statistics:
+  name: Backfill statistics
+  description: >
+    Import daily energy history from the Sigenergy Cloud into the long-term
+    statistics of the Total energy sensors (grid import/export, battery
+    charging/discharging, home consumption) and Lifetime PV Generation, so the
+    Energy Dashboard shows days before Home Assistant started recording them.
+    Runs in the background: one month is fetched about every 10 minutes
+    because of the API rate limit.
+  fields:
+    system_id:
+      name: System ID
+      description: >
+        Optional. The Sigenergy system (installation) ID, for example
+        NDXZZ1731665796. If omitted, all systems are backfilled.
+      required: false
+      example: "NDXZZ1731665796"
+      selector:
+        text:
+    start_date:
+      name: Start date
+      description: First day to import.
+      required: true
+      example: "2025-01-01"
+      selector:
+        date:
+    end_date:
+      name: End date
+      description: >
+        Last day to import. Days on which a sensor already has statistics,
+        and today, are skipped.
+      required: true
+      example: "2025-12-31"
+      selector:
+        date:
