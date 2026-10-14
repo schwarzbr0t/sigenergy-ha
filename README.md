@@ -65,6 +65,11 @@ A **Sigenergy account** (username + password) for an installation where you are 
 | Monthly PV Generation | kWh | Energy generated this month |
 | Annual PV Generation | kWh | Energy generated this year |
 | Lifetime PV Generation | kWh | Total lifetime generation |
+| Grid Import Today / This Month / This Year / Total | kWh | Energy imported from the grid |
+| Grid Export Today / This Month / This Year / Total | kWh | Energy exported to the grid |
+| Battery Charging Today / This Month / This Year / Total | kWh | Energy charged into the battery |
+| Battery Discharging Today / This Month / This Year / Total | kWh | Energy discharged from the battery |
+| Home Consumption Today / This Month / This Year / Total | kWh | Household energy consumption |
 | Operating Mode | — | Current system operating mode |
 | Last Sync | timestamp | Time of last successful data fetch |
 
@@ -100,6 +105,10 @@ Select the region matching your Sigenergy account during setup:
 ## API Rate Limits
 
 The Sigenergy Cloud API allows **1 request per endpoint per 5 minutes**. The integration polls every 5 minutes and caches the system/device list so restarts don't trigger extra API calls.
+
+Because of this limit, the energy history sensors (grid import/export, battery charging/discharging, home consumption) refresh one period per poll: the "Today" values every 10 minutes, the month, year and total values every 30 minutes. Right after a restart some of them show "unknown" until their first refresh.
+
+For the Energy Dashboard, use **Grid Import Total** / **Grid Export Total** for the grid and **Battery Charging Total** / **Battery Discharging Total** for the battery.
 
 ## Troubleshooting
 

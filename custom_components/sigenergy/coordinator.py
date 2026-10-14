@@ -15,6 +15,7 @@ from homeassistant.helpers.update_coordinator import (
     DataUpdateCoordinator,
     UpdateFailed,
 )
+from homeassistant.util import dt as dt_util
 
 from .api import (
     SigenergyApi,
@@ -36,6 +37,8 @@ from .const import (
     CONF_REGION,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    HISTORY_LEVEL_LIFETIME,
+    HISTORY_LEVEL_ROTATION,
     REGION_URLS,
 )
 
@@ -58,6 +61,7 @@ class SigenergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.api = self._create_api(hass, entry)
         self.systems: list[dict[str, Any]] = []
         self.devices: dict[str, list[dict[str, Any]]] = {}
+        self._history_poll = 0
 
     @staticmethod
     def _create_api(
@@ -167,6 +171,10 @@ class SigenergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         try:
             result: dict[str, Any] = {"systems": {}}
+            history_level = HISTORY_LEVEL_ROTATION[
+                self._history_poll % len(HISTORY_LEVEL_ROTATION)
+            ]
+            self._history_poll += 1
 
             for system in self.systems:
                 system_id = system["systemId"]
@@ -178,6 +186,8 @@ class SigenergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     "energy_flow": {},
                     "operating_mode": None,
                     "devices": {},
+                    # Keep the levels not refreshed this poll
+                    "history": dict(prev.get("history", {})),
                 }
 
                 # ── System-level realtime data ────────────────────
@@ -211,6 +221,28 @@ class SigenergyCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 except SigenergyApiError as err:
                     _LOGGER.debug(
                         "Error fetching operating mode for %s: %s", system_id, err
+                    )
+
+                # ── Energy history (one level per poll) ───────────
+                # Optional data: any failure, including rate limiting,
+                # keeps the previous values instead of failing the update.
+                try:
+                    date = (
+                        None
+                        if history_level == HISTORY_LEVEL_LIFETIME
+                        else dt_util.now().date().isoformat()
+                    )
+                    system_data["history"][history_level] = (
+                        await self.api.get_system_history(
+                            system_id, history_level, date
+                        )
+                    )
+                except SigenergyAuthError:
+                    raise
+                except SigenergyApiError as err:
+                    _LOGGER.debug(
+                        "Error fetching %s history for %s: %s",
+                        history_level, system_id, err,
                     )
 
                 # ── Device-level realtime data ────────────────────

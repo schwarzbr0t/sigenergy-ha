@@ -1,7 +1,7 @@
 """Sensor platform for Sigenergy Cloud integration."""
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, fields, is_dataclass
 import logging
 from typing import Any
 
@@ -25,7 +25,9 @@ from homeassistant.const import (
 )
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import dt as dt_util
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -35,11 +37,22 @@ from .const import (
     DEVICE_TYPE_GATEWAY,
     DEVICE_TYPE_METER,
     DOMAIN,
+    HISTORY_LEVEL_DAY,
+    HISTORY_LEVEL_LIFETIME,
+    HISTORY_LEVEL_MONTH,
+    HISTORY_LEVEL_YEAR,
     OPERATING_MODES,
 )
 from .coordinator import SigenergyCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+# HA 2026.10 replaced DeviceInfo's `via_device` identifier tuple with
+# `via_device_id` (the device registry id); `via_device` stops working in
+# 2027.8. Older HA versions only understand `via_device`.
+_SUPPORTS_VIA_DEVICE_ID = is_dataclass(DeviceInfo) and any(
+    f.name == "via_device_id" for f in fields(DeviceInfo)
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -335,6 +348,48 @@ INVERTER_SENSORS: tuple[SigenergySensorDescription, ...] = (
     ),
 )
 
+# ── System energy history sensors ───────────────────────────────
+
+# (key, name, icon, API field) for each aggregated energy value
+_HISTORY_METRICS: tuple[tuple[str, str, str, str], ...] = (
+    ("grid_import", "Grid Import", "mdi:transmission-tower-import", "powerFromGrid"),
+    ("grid_export", "Grid Export", "mdi:transmission-tower-export", "powerToGrid"),
+    ("battery_charging", "Battery Charging", "mdi:battery-arrow-up", "esCharging"),
+    ("battery_discharging", "Battery Discharging", "mdi:battery-arrow-down", "esDischarging"),
+    ("home_consumption", "Home Consumption", "mdi:home-lightning-bolt", "powerUse"),
+)
+
+# (history level, name suffix)
+_HISTORY_PERIODS: tuple[tuple[str, str], ...] = (
+    (HISTORY_LEVEL_DAY, "Today"),
+    (HISTORY_LEVEL_MONTH, "This Month"),
+    (HISTORY_LEVEL_YEAR, "This Year"),
+    (HISTORY_LEVEL_LIFETIME, "Total"),
+)
+
+
+@dataclass(frozen=True, kw_only=True)
+class SigenergyHistorySensorDescription(SigenergySensorDescription):
+    """Describe a Sigenergy energy history sensor."""
+
+    level: str
+
+
+SYSTEM_HISTORY_SENSORS: tuple[SigenergyHistorySensorDescription, ...] = tuple(
+    SigenergyHistorySensorDescription(
+        key=f"{key}_{level.lower()}",
+        name=f"{name} {suffix}",
+        icon=icon,
+        native_unit_of_measurement=UnitOfEnergy.KILO_WATT_HOUR,
+        device_class=SensorDeviceClass.ENERGY,
+        state_class=SensorStateClass.TOTAL_INCREASING,
+        value_fn=field,
+        level=level,
+    )
+    for level, suffix in _HISTORY_PERIODS
+    for key, name, icon, field in _HISTORY_METRICS
+)
+
 # ── Meter sensors ───────────────────────────────────────────────
 
 METER_SENSORS: tuple[SigenergySensorDescription, ...] = (
@@ -442,11 +497,22 @@ async def async_setup_entry(
 ) -> None:
     """Set up Sigenergy sensors from a config entry."""
     coordinator: SigenergyCoordinator = hass.data[DOMAIN][entry.entry_id]
+    device_registry = dr.async_get(hass)
     entities: list[SensorEntity] = []
 
     for system in coordinator.systems:
         system_id = system["systemId"]
         system_name = system.get("systemName", system_id)
+
+        # Register the system device up front so device-level sensors can
+        # link to it by registry id (via_device_id).
+        system_device = device_registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={(DOMAIN, system_id)},
+            name=system_name,
+            manufacturer="Sigenergy",
+            model="Solar System",
+        )
 
         # System-level energy flow sensors
         for desc in SYSTEM_ENERGY_FLOW_SENSORS:
@@ -469,6 +535,18 @@ async def async_setup_entry(
                     system_id=system_id,
                     system_name=system_name,
                     data_source="summary",
+                )
+            )
+
+        # System-level energy history sensors
+        for desc in SYSTEM_HISTORY_SENSORS:
+            entities.append(
+                SigenergyHistorySensor(
+                    coordinator=coordinator,
+                    description=desc,
+                    system_id=system_id,
+                    system_name=system_name,
+                    data_source="history",
                 )
             )
 
@@ -523,6 +601,7 @@ async def async_setup_entry(
                         serial_number=serial,
                         device_type=device_type,
                         device_name=device_name,
+                        system_device_id=system_device.id,
                     )
                 )
 
@@ -575,6 +654,27 @@ class SigenergySystemSensor(
         return None
 
 
+class SigenergyHistorySensor(SigenergySystemSensor):
+    """Sensor for an aggregated energy value from the system history."""
+
+    entity_description: SigenergyHistorySensorDescription
+
+    @property
+    def native_value(self) -> float | None:
+        """Return the energy total for the sensor's period."""
+        if not self.coordinator.data:
+            return None
+        system_data = self.coordinator.data.get("systems", {}).get(
+            self._system_id, {}
+        )
+        period = system_data.get("history", {}).get(self.entity_description.level, {})
+        value = period.get(self.entity_description.value_fn)
+        try:
+            return float(value) if value is not None else None
+        except (ValueError, TypeError):
+            return None
+
+
 class SigenergyOperatingModeSensor(
     CoordinatorEntity[SigenergyCoordinator], SensorEntity
 ):
@@ -622,7 +722,7 @@ class SigenergyBatteryCapacitySensor(
     _attr_device_class = SensorDeviceClass.ENERGY_STORAGE
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_icon = "mdi:battery"
-    _attr_entity_category = "diagnostic"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,
@@ -704,7 +804,7 @@ class SigenergyLastSyncSensor(
 ):
     """Diagnostic sensor showing last and next sync time."""
 
-    _attr_entity_category = "diagnostic"
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
 
     def __init__(
         self,
@@ -757,6 +857,7 @@ class SigenergyDeviceSensor(
         serial_number: str,
         device_type: str,
         device_name: str,
+        system_device_id: str,
     ) -> None:
         """Initialize the sensor."""
         super().__init__(coordinator)
@@ -764,12 +865,16 @@ class SigenergyDeviceSensor(
         self._system_id = system_id
         self._serial_number = serial_number
         self._attr_unique_id = f"{serial_number}_{description.key}"
+        if _SUPPORTS_VIA_DEVICE_ID:
+            via = {"via_device_id": system_device_id}
+        else:
+            via = {"via_device": (DOMAIN, system_id)}
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, serial_number)},
             name=device_name,
             manufacturer="Sigenergy",
             model=device_type,
-            via_device=(DOMAIN, system_id),
+            **via,
         )
 
     @property

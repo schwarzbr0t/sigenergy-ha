@@ -33,6 +33,7 @@ DEVICE_LIST_URL = "/openapi/system/{system_id}/devices"
 REALTIME_SUMMARY_URL = "/openapi/systems/{system_id}/summary"
 ENERGY_FLOW_URL = "/openapi/systems/{system_id}/energyFlow"
 DEVICE_REALTIME_URL = "/openapi/systems/{system_id}/devices/{serial_number}/realtimeInfo"
+SYSTEM_HISTORY_URL = "/openapi/systems/{system_id}/history"
 QUERY_MODE_URL = "/openapi/instruction/{system_id}/settings"
 SWITCH_MODE_URL = "/openapi/instruction/{system_id}/settings"
 ONBOARD_URL = "/openapi/board/onboard"
@@ -54,6 +55,22 @@ AUTH_METHOD_PASSWORD = "password"
 
 # Update interval
 DEFAULT_SCAN_INTERVAL = 300  # 5 minutes (API rate limit: 1 request per 5 min)
+
+# Energy history levels. The history endpoint is rate-limited like every other
+# endpoint, so only one level is fetched per poll, following this rotation
+# (today every 10 min, month/year/lifetime every 30 min).
+HISTORY_LEVEL_DAY = "Day"
+HISTORY_LEVEL_MONTH = "Month"
+HISTORY_LEVEL_YEAR = "Year"
+HISTORY_LEVEL_LIFETIME = "Lifetime"
+HISTORY_LEVEL_ROTATION = (
+    HISTORY_LEVEL_DAY,
+    HISTORY_LEVEL_LIFETIME,
+    HISTORY_LEVEL_DAY,
+    HISTORY_LEVEL_MONTH,
+    HISTORY_LEVEL_DAY,
+    HISTORY_LEVEL_YEAR,
+)
 
 # Device types
 DEVICE_TYPE_INVERTER = "Inverter"
