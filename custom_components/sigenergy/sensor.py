@@ -47,12 +47,17 @@ from .coordinator import SigenergyCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-# HA 2026.10 replaced DeviceInfo's `via_device` identifier tuple with
-# `via_device_id` (the device registry id); `via_device` stops working in
-# 2027.8. Older HA versions only understand `via_device`.
-_SUPPORTS_VIA_DEVICE_ID = is_dataclass(DeviceInfo) and any(
-    f.name == "via_device_id" for f in fields(DeviceInfo)
-)
+# HA 2026.8 added `via_device_id` (the device registry id) to DeviceInfo and
+# deprecated the `via_device` identifier tuple, which stops working in 2027.8.
+# Older HA versions only understand `via_device`. DeviceInfo is a TypedDict up
+# to 2026.10 and a dataclass in later versions.
+if is_dataclass(DeviceInfo):
+    _DEVICE_INFO_KEYS = {f.name for f in fields(DeviceInfo)}
+else:
+    _DEVICE_INFO_KEYS = set(getattr(DeviceInfo, "__optional_keys__", ())) | set(
+        getattr(DeviceInfo, "__required_keys__", ())
+    )
+_SUPPORTS_VIA_DEVICE_ID = "via_device_id" in _DEVICE_INFO_KEYS
 
 
 @dataclass(frozen=True, kw_only=True)
