@@ -1,0 +1,97 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Sigenergy Cloud",
+        "description": "Choose your region and authentication method.",
+        "data": {
+          "region": "Region",
+          "auth_method": "Authentication Method"
+        }
+      },
+      "password": {
+        "title": "Sigen Account Login",
+        "description": "Enter your Sigenergy account credentials.",
+        "data": {
+          "username": "Username (Email)",
+          "password": "Password"
+        }
+      },
+      "key": {
+        "title": "App Key Authentication",
+        "description": "Enter your App Key and App Secret from the Sigenergy Developer Portal.",
+        "data": {
+          "app_key": "App Key",
+          "app_secret": "App Secret"
+        }
+      },
+      "system": {
+        "title": "Installation ID",
+        "description": "Enter your Installation ID from the Sigenergy Developer Portal ({portal_url}).",
+        "data": {
+          "installation_id": "Installation ID"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Reauthenticate",
+        "description": "Your Sigenergy Cloud credentials have expired. Please reauthenticate."
+      }
+    },
+    "error": {
+      "invalid_auth": "Login failed. Please check your email, password and region — and make sure password login is enabled for this account. (Details: {error_detail})",
+      "user_not_found": "This email is not registered in the selected region. Please check your email address or switch to the region where your Sigenergy account was created.",
+      "wrong_password": "The password is incorrect. Please try again — note that passwords are case-sensitive.",
+      "rate_limited": "Too many login attempts. Please wait a few minutes and try again.",
+      "cannot_connect": "Could not reach the Sigenergy Cloud. Please check your internet connection and try again. (Details: {error_detail})",
+      "unknown": "Something went wrong during login. Please try again. (Details: {error_detail})"
+    },
+    "abort": {
+      "already_configured": "This account is already configured."
+    }
+  },
+  "services": {
+    "refresh_systems": {
+      "name": "Refresh systems",
+      "description": "Clear the cached system/device list and re-query the Sigenergy Cloud API so newly-added systems on your account are discovered.",
+      "fields": {
+        "entry_id": {
+          "name": "Config entry",
+          "description": "Optional — limit the refresh to a single Sigenergy Cloud config entry. If omitted, all Sigenergy Cloud entries are refreshed."
+        }
+      }
+    },
+    "backfill_statistics": {
+      "name": "Backfill statistics",
+      "description": "Import daily energy history from the Sigenergy Cloud into the long-term statistics of the Total energy sensors and Lifetime PV Generation. Runs in the background, about one month every 10 minutes because of the API rate limit.",
+      "fields": {
+        "system_id": {
+          "name": "System ID",
+          "description": "Optional — the Sigenergy system (installation) ID, for example NDXZZ1731665796. If omitted, all systems are backfilled."
+        },
+        "start_date": {
+          "name": "Start date",
+          "description": "First day to import."
+        },
+        "end_date": {
+          "name": "End date",
+          "description": "Last day to import. Days on which a sensor already has statistics, and today, are skipped."
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "pv_power": { "name": "PV Power" },
+      "grid_power": { "name": "Grid Power" },
+      "battery_power": { "name": "Battery Power" },
+      "load_power": { "name": "Load Power" },
+      "ev_power": { "name": "EV Charger Power" },
+      "heat_pump_power": { "name": "Heat Pump Power" },
+      "battery_soc": { "name": "Battery State of Charge" },
+      "daily_generation": { "name": "Daily PV Generation" },
+      "monthly_generation": { "name": "Monthly PV Generation" },
+      "annual_generation": { "name": "Annual PV Generation" },
+      "lifetime_generation": { "name": "Lifetime PV Generation" }
+    }
+  }
+}
