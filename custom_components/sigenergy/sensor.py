@@ -120,6 +120,18 @@ SYSTEM_ENERGY_FLOW_SENSORS: tuple[SigenergySensorDescription, ...] = (
         state_class=SensorStateClass.MEASUREMENT,
         value_fn="evPower",
     ),
+    # The energy flow reports an AC wallbox under acPower; evPower stays 0
+    # for it (issue #10).
+    SigenergySensorDescription(
+        key="ac_charger_power",
+        translation_key="ac_charger_power",
+        name="AC Charger Power",
+        icon="mdi:ev-plug-type2",
+        native_unit_of_measurement=UnitOfPower.KILO_WATT,
+        device_class=SensorDeviceClass.POWER,
+        state_class=SensorStateClass.MEASUREMENT,
+        value_fn="acPower",
+    ),
     SigenergySensorDescription(
         key="heat_pump_power",
         translation_key="heat_pump_power",

@@ -86,6 +86,7 @@
       "battery_power": { "name": "Battery Power" },
       "load_power": { "name": "Load Power" },
       "ev_power": { "name": "EV Charger Power" },
+      "ac_charger_power": { "name": "AC Charger Power" },
       "heat_pump_power": { "name": "Heat Pump Power" },
       "battery_soc": { "name": "Battery State of Charge" },
       "daily_generation": { "name": "Daily PV Generation" },

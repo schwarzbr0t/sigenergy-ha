@@ -9,7 +9,7 @@ Home Assistant custom integration for **Sigenergy** solar inverters, batteries, 
 
 ## Features
 
-- **Real-time energy flow**: PV power, grid import/export, battery charge/discharge, home load, EV charger, heat pump
+- **Real-time energy flow**: PV power, grid import/export, battery charge/discharge, home load, EV charger (DC and AC), heat pump
 - **Battery monitoring**: State of charge (%), stored energy (kWh), and total capacity (kWh)
 - **Energy generation statistics**: Daily, monthly, annual, and lifetime PV generation
 - **Device-level monitoring**: Per-inverter and per-meter data — voltages, currents, power factor, temperature, frequency
@@ -57,7 +57,8 @@ A **Sigenergy account** (username + password) for an installation where you are 
 | Grid Power | kW | Positive = import, negative = export to grid |
 | Battery Power | kW | Positive = charging, negative = discharging |
 | Load Power | kW | Current household consumption |
-| EV Charger Power | kW | EV charging power |
+| EV Charger Power | kW | EV charging power (DC charger) |
+| AC Charger Power | kW | Charging power of an AC wallbox connected to the system |
 | Heat Pump Power | kW | Heat pump power |
 | Battery State of Charge | % | Current battery charge level |
 | Battery Stored Energy | kWh | Computed: capacity × SOC |
