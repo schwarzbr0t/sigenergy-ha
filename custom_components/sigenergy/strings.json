@@ -3,38 +3,19 @@
     "step": {
       "user": {
         "title": "Sigenergy Cloud",
-        "description": "Choose your region and authentication method.",
+        "description": "Choose your region and enter your Sigenergy account credentials.",
         "data": {
           "region": "Region",
-          "auth_method": "Authentication Method"
-        }
-      },
-      "password": {
-        "title": "Sigen Account Login",
-        "description": "Enter your Sigenergy account credentials.",
-        "data": {
           "username": "Username (Email)",
           "password": "Password"
         }
       },
-      "key": {
-        "title": "App Key Authentication",
-        "description": "Enter your App Key and App Secret from the Sigenergy Developer Portal.",
-        "data": {
-          "app_key": "App Key",
-          "app_secret": "App Secret"
-        }
-      },
-      "system": {
-        "title": "Installation ID",
-        "description": "Enter your Installation ID from the Sigenergy Developer Portal ({portal_url}).",
-        "data": {
-          "installation_id": "Installation ID"
-        }
-      },
       "reauth_confirm": {
         "title": "Reauthenticate",
-        "description": "Your Sigenergy Cloud credentials have expired. Please reauthenticate."
+        "description": "The login for {username} failed. Please enter the current password of your Sigenergy account.",
+        "data": {
+          "password": "Password"
+        }
       }
     },
     "error": {
@@ -46,7 +27,8 @@
       "unknown": "Something went wrong during login. Please try again. (Details: {error_detail})"
     },
     "abort": {
-      "already_configured": "This account is already configured."
+      "already_configured": "This account is already configured.",
+      "reauth_successful": "Reauthentication was successful."
     }
   },
   "services": {
